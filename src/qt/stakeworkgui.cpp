@@ -824,11 +824,11 @@ void StakeWorkGUI::createToolBars()
 
     // Buttons text
     std::string btnNamesText[5] = {
-        "HOME",
-        "SEND",
-        "RECEIVE",
-        "HISTORY",
-        "DAO"
+        QCoreApplication::translate("stakeworkgui","HOME").toStdString(),
+        QCoreApplication::translate("stakeworkgui","SEND").toStdString(),
+        QCoreApplication::translate("stakeworkgui","RECEIVE").toStdString(),
+        QCoreApplication::translate("stakeworkgui","HISTORY").toStdString(),
+        QCoreApplication::translate("stakeworkgui","DAO").toStdString()
     };
 
     // Build each new button
