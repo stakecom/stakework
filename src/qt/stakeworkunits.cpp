@@ -27,7 +27,7 @@ QList<StakeWorkUnits::Unit> StakeWorkUnits::availableUnits()
     QList<StakeWorkUnits::Unit> unitlist;
 
     unitlist.append(XSW); // Stakework
-    unitlist.append(BTC); // Bitcoin
+/*    unitlist.append(BTC); // Bitcoin
     unitlist.append(EUR); // Euro
     unitlist.append(USD); // United States Dollar
     unitlist.append(ARS); // Argentine Peso
@@ -60,7 +60,7 @@ QList<StakeWorkUnits::Unit> StakeWorkUnits::availableUnits()
     unitlist.append(TRY); // Turkish lira
     unitlist.append(TWD); // New Taiwan dollar
     unitlist.append(ZAR); // South African rand
-
+*/
     return unitlist;
 }
 
