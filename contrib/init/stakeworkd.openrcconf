@@ -1,0 +1,33 @@
+# /etc/conf.d/stakeworkd: config file for /etc/init.d/stakeworkd
+
+# Config file location
+#STAKEWORKD_CONFIGFILE="/etc/stakework/stakework.conf"
+
+# What directory to write pidfile to?  (created and owned by $STAKEWORKD_USER)
+#STAKEWORKD_PIDDIR="/var/run/stakeworkd"
+
+# What filename to give the pidfile
+#STAKEWORKD_PIDFILE="${STAKEWORKD_PIDDIR}/stakeworkd.pid"
+
+# Where to write stakeworkd data (be mindful that the blockchain is large)
+#STAKEWORKD_DATADIR="/var/lib/stakeworkd"
+
+# User and group to own stakeworkd process
+#STAKEWORKD_USER="stakework"
+#STAKEWORKD_GROUP="stakework"
+
+# Path to stakeworkd executable
+#STAKEWORKD_BIN="/usr/bin/stakeworkd"
+
+# Nice value to run stakeworkd under
+#STAKEWORKD_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+STAKEWORKD_OPTS="-disablewallet"
+
+# The timeout in seconds OpenRC will wait for stakeworkd to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+STAKEWORKD_SIGTERM_TIMEOUT=60

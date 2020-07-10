@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+#  stakeworkd The stakework core server.
+#
+#
+# chkconfig: 345 80 20
+# description: stakeworkd
+# processname: stakeworkd
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+# you can override defaults in /etc/sysconfig/stakeworkd, see below
+if [ -f /etc/sysconfig/stakeworkd ]; then
+        . /etc/sysconfig/stakeworkd
+fi
+
+RETVAL=0
+
+prog=stakeworkd
+# you can override the lockfile via STAKEWORKD_LOCKFILE in /etc/sysconfig/stakeworkd
+lockfile=${STAKEWORKD_LOCKFILE-/var/lock/subsys/stakeworkd}
+
+# stakeworkd defaults to /usr/bin/stakeworkd, override with STAKEWORKD_BIN
+stakeworkd=${STAKEWORKD_BIN-/usr/bin/stakeworkd}
+
+# stakeworkd opts default to -disablewallet, override with STAKEWORKD_OPTS
+stakeworkd_opts=${STAKEWORKD_OPTS--disablewallet}
+
+start() {
+    echo -n $"Starting $prog: "
+    daemon $DAEMONOPTS $stakeworkd $stakeworkd_opts
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch $lockfile
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
+    return $RETVAL
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status $prog
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: service $prog {start|stop|status|restart}"
+        exit 1
+        ;;
+esac

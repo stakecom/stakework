@@ -1,0 +1,484 @@
+// Copyright (c) 2014-2015 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+#include <base58.h>
+
+#include <hash.h>
+#include <uint256.h>
+
+#include <assert.h>
+#include <stdint.h>
+#include <string.h>
+#include <vector>
+#include <string>
+#include <boost/variant/apply_visitor.hpp>
+#include <boost/variant/static_visitor.hpp>
+
+/** All alphanumeric characters except for "0", "I", "O", and "l" */
+static const char* pszBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+bool DecodeBase58(const char* psz, std::vector<unsigned char>& vch)
+{
+    // Skip leading spaces.
+    while (*psz && isspace(*psz))
+        psz++;
+    // Skip and count leading '1's.
+    int zeroes = 0;
+    while (*psz == '1') {
+        zeroes++;
+        psz++;
+    }
+    // Allocate enough space in big-endian base256 representation.
+    std::vector<unsigned char> b256(strlen(psz) * 733 / 1000 + 1); // log(58) / log(256), rounded up.
+    // Process the characters.
+    while (*psz && !isspace(*psz)) {
+        // Decode base58 character
+        const char* ch = strchr(pszBase58, *psz);
+        if (ch == nullptr)
+            return false;
+        // Apply "b256 = b256 * 58 + ch".
+        int carry = ch - pszBase58;
+        for (std::vector<unsigned char>::reverse_iterator it = b256.rbegin(); it != b256.rend(); it++) {
+            carry += 58 * (*it);
+            *it = carry % 256;
+            carry /= 256;
+        }
+        assert(carry == 0);
+        psz++;
+    }
+    // Skip trailing spaces.
+    while (isspace(*psz))
+        psz++;
+    if (*psz != 0)
+        return false;
+    // Skip leading zeroes in b256.
+    std::vector<unsigned char>::iterator it = b256.begin();
+    while (it != b256.end() && *it == 0)
+        it++;
+    // Copy result into output vector.
+    vch.reserve(zeroes + (b256.end() - it));
+    vch.assign(zeroes, 0x00);
+    while (it != b256.end())
+        vch.push_back(*(it++));
+    return true;
+}
+
+std::string EncodeBase58(const unsigned char* pbegin, const unsigned char* pend)
+{
+    // Skip & count leading zeroes.
+    int zeroes = 0;
+    int length = 0;
+    while (pbegin != pend && *pbegin == 0) {
+        pbegin++;
+        zeroes++;
+    }
+    // Allocate enough space in big-endian base58 representation.
+    int size = (pend - pbegin) * 138 / 100 + 1; // log(256) / log(58), rounded up.
+    std::vector<unsigned char> b58(size);
+    // Process the bytes.
+    while (pbegin != pend) {
+        int carry = *pbegin;
+        int i = 0;
+        // Apply "b58 = b58 * 256 + ch".
+        for (std::vector<unsigned char>::reverse_iterator it = b58.rbegin(); (carry != 0 || i < length) && (it != b58.rend()); it++, i++) {
+            carry += 256 * (*it);
+            *it = carry % 58;
+            carry /= 58;
+        }
+
+        assert(carry == 0);
+        length = i;
+        pbegin++;
+    }
+    // Skip leading zeroes in base58 result.
+    std::vector<unsigned char>::iterator it = b58.begin() + (size - length);
+    while (it != b58.end() && *it == 0)
+        it++;
+    // Translate the result into a string.
+    std::string str;
+    str.reserve(zeroes + (b58.end() - it));
+    str.assign(zeroes, '1');
+    while (it != b58.end())
+        str += pszBase58[*(it++)];
+    return str;
+}
+
+std::string EncodeBase58(const std::vector<unsigned char>& vch)
+{
+    return EncodeBase58(&vch[0], &vch[0] + vch.size());
+}
+
+bool DecodeBase58(const std::string& str, std::vector<unsigned char>& vchRet)
+{
+    return DecodeBase58(str.c_str(), vchRet);
+}
+
+std::string EncodeBase58Check(const std::vector<unsigned char>& vchIn)
+{
+    // add 4-byte hash check to the end
+    std::vector<unsigned char> vch(vchIn);
+    uint256 hash = Hash(vch.begin(), vch.end());
+    vch.insert(vch.end(), (unsigned char*)&hash, (unsigned char*)&hash + 4);
+    return EncodeBase58(vch);
+}
+
+bool DecodeBase58Check(const char* psz, std::vector<unsigned char>& vchRet)
+{
+    if (!DecodeBase58(psz, vchRet) ||
+        (vchRet.size() < 4)) {
+        vchRet.clear();
+        return false;
+    }
+    // re-calculate the checksum, insure it matches the included 4-byte checksum
+    uint256 hash = Hash(vchRet.begin(), vchRet.end() - 4);
+    if (memcmp(&hash, &vchRet.end()[-4], 4) != 0) {
+        vchRet.clear();
+        return false;
+    }
+    vchRet.resize(vchRet.size() - 4);
+    return true;
+}
+
+bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>& vchRet)
+{
+    return DecodeBase58Check(str.c_str(), vchRet);
+}
+
+CBase58Data::CBase58Data()
+{
+    vchVersion.clear();
+    vchData.clear();
+}
+
+void CBase58Data::SetData(const std::vector<unsigned char>& vchVersionIn, const void* pdata, size_t nSize)
+{
+    vchVersion = vchVersionIn;
+    vchData.resize(nSize);
+    if (!vchData.empty())
+        memcpy(&vchData[0], pdata, nSize);
+}
+
+void CBase58Data::SetData(const std::vector<unsigned char>& vchVersionIn, const void* pdata, size_t nSize, const void* pdata2, size_t nSize2)
+{
+    vchVersion = vchVersionIn;
+    vchData.resize(nSize+nSize2);
+    if (!vchData.empty()) {
+        memcpy(&vchData[0], pdata, nSize);
+        memcpy(&vchData[nSize], pdata2, nSize2);
+    }
+}
+
+void CBase58Data::SetData(const std::vector<unsigned char>& vchVersionIn, const void* pdata, size_t nSize, const void* pdata2, size_t nSize2, const void* pdata3, size_t nSize3)
+{
+    vchVersion = vchVersionIn;
+    vchData.resize(nSize+nSize2+nSize3);
+    if (!vchData.empty()) {
+        memcpy(&vchData[0], pdata, nSize);
+        memcpy(&vchData[nSize], pdata2, nSize2);
+        memcpy(&vchData[nSize+nSize2], pdata3, nSize3);
+    }
+}
+
+void CBase58Data::SetData(const std::vector<unsigned char>& vchVersionIn, const unsigned char* pbegin, const unsigned char* pend)
+{
+    SetData(vchVersionIn, (void*)pbegin, pend - pbegin);
+}
+
+bool CBase58Data::SetString(const char* psz, unsigned int nVersionBytes)
+{
+    std::vector<unsigned char> vchTemp;
+    bool rc58 = DecodeBase58Check(psz, vchTemp);
+    if ((!rc58) || (vchTemp.size() < nVersionBytes)) {
+        vchData.clear();
+        vchVersion.clear();
+        return false;
+    }
+    vchVersion.assign(vchTemp.begin(), vchTemp.begin() + nVersionBytes);
+    vchData.resize(vchTemp.size() - nVersionBytes);
+    if (!vchData.empty())
+        memcpy(&vchData[0], &vchTemp[nVersionBytes], vchData.size());
+    memory_cleanse(&vchTemp[0], vchTemp.size());
+    return true;
+}
+
+bool CBase58Data::SetString(const std::string& str)
+{
+    return SetString(str.c_str());
+}
+
+std::string CBase58Data::ToString() const
+{
+    std::vector<unsigned char> vch = vchVersion;
+    vch.insert(vch.end(), vchData.begin(), vchData.end());
+    return EncodeBase58Check(vch);
+}
+
+int CBase58Data::CompareTo(const CBase58Data& b58) const
+{
+    if (vchVersion < b58.vchVersion)
+        return -1;
+    if (vchVersion > b58.vchVersion)
+        return 1;
+    if (vchData < b58.vchData)
+        return -1;
+    if (vchData > b58.vchData)
+        return 1;
+    return 0;
+}
+
+namespace
+{
+class CStakeWorkAddressVisitor : public boost::static_visitor<bool>
+{
+private:
+    CStakeWorkAddress* addr;
+
+public:
+    CStakeWorkAddressVisitor(CStakeWorkAddress* addrIn) : addr(addrIn) {}
+
+    bool operator()(const CKeyID& id) const { return addr->Set(id); }
+    bool operator()(const std::pair<CKeyID, CKeyID>& id) const { return addr->Set(id.first, id.second); }
+    bool operator()(const std::pair<CKeyID, std::pair<CKeyID, CKeyID>>& id) const { return addr->Set(id.first, id.second.first, id.second.second); }
+    bool operator()(const CScriptID& id) const { return addr->Set(id); }
+    bool operator()(const CNoDestination& no) const { return false; }
+};
+
+} // anon namespace
+
+bool CStakeWorkAddress::Set(const CKeyID& id)
+{
+    SetData(Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS), &id, 20);
+    return true;
+}
+
+bool CStakeWorkAddress::Set(const CKeyID& id, const CKeyID& id2)
+{
+    SetData(Params().Base58Prefix(CChainParams::COLDSTAKING_ADDRESS), &id, 20, &id2, 20);
+    return true;
+}
+
+bool CStakeWorkAddress::Set(const CKeyID& id, const CKeyID& id2, const CKeyID& id3)
+{
+    SetData(Params().Base58Prefix(CChainParams::COLDSTAKING_ADDRESS_V2), &id, 20, &id2, 20, &id3, 20);
+    return true;
+}
+
+bool CStakeWorkAddress::Set(const CScriptID& id)
+{
+    SetData(Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS), &id, 20);
+    return true;
+}
+
+bool CStakeWorkAddress::Set(const CScript& scriptIn)
+{
+    SetData(Params().Base58Prefix(CChainParams::RAW_SCRIPT_ADDRESS), &scriptIn[0], scriptIn.size());
+    return true;
+}
+
+bool CStakeWorkAddress::Set(const CTxDestination& dest)
+{
+    return boost::apply_visitor(CStakeWorkAddressVisitor(this), dest);
+}
+
+bool CStakeWorkAddress::IsValid() const
+{
+    return IsValid(Params());
+}
+
+bool CStakeWorkAddress::GetSpendingAddress(CStakeWorkAddress &address) const
+{
+    if(!IsColdStakingAddress(Params()) && !IsColdStakingv2Address(Params()))
+        return false;
+    uint160 id;
+    memcpy(&id, &vchData[20], 20);
+    address.Set(CKeyID(id));
+    return true;
+}
+
+bool CStakeWorkAddress::GetStakingAddress(CStakeWorkAddress &address) const
+{
+    if(!IsColdStakingAddress(Params()) && !IsColdStakingv2Address(Params()))
+        return false;
+    uint160 id;
+    memcpy(&id, &vchData[0], 20);
+    address.Set(CKeyID(id));
+    return true;
+}
+
+bool CStakeWorkAddress::GetVotingAddress(CStakeWorkAddress &address) const
+{
+    if(!IsColdStakingv2Address(Params()))
+        return false;
+    uint160 id;
+    memcpy(&id, &vchData[40], 20);
+    address.Set(CKeyID(id));
+    return true;
+}
+
+bool CStakeWorkAddress::IsValid(const CChainParams& params) const
+{
+    if (vchVersion == params.Base58Prefix(CChainParams::COLDSTAKING_ADDRESS))
+        return vchData.size() == 40;
+    if (vchVersion == params.Base58Prefix(CChainParams::COLDSTAKING_ADDRESS_V2))
+        return vchData.size() == 60;
+    if (vchVersion == params.Base58Prefix(CChainParams::RAW_SCRIPT_ADDRESS))
+        return vchData.size() > 0;
+    bool fCorrectSize = vchData.size() == 20;
+    bool fKnownVersion = vchVersion == params.Base58Prefix(CChainParams::PUBKEY_ADDRESS) ||
+                         vchVersion == params.Base58Prefix(CChainParams::SCRIPT_ADDRESS);
+    return fCorrectSize && fKnownVersion;
+}
+
+bool CStakeWorkAddress::IsColdStakingAddress(const CChainParams& params) const
+{
+    return vchVersion == params.Base58Prefix(CChainParams::COLDSTAKING_ADDRESS) && vchData.size() == 40;
+}
+
+
+bool CStakeWorkAddress::IsColdStakingv2Address(const CChainParams& params) const
+{
+    return vchVersion == params.Base58Prefix(CChainParams::COLDSTAKING_ADDRESS_V2) && vchData.size() == 60;
+}
+
+CTxDestination CStakeWorkAddress::Get() const
+{
+    if (!IsValid())
+        return CNoDestination();
+    uint160 id;
+    memcpy(&id, &vchData[0], 20);
+    if (vchVersion == Params().Base58Prefix(CChainParams::COLDSTAKING_ADDRESS)) {
+        uint160 id2;
+        memcpy(&id2, &vchData[20], 20);
+        return std::make_pair(CKeyID(id), CKeyID(id2));
+    }
+    if (vchVersion == Params().Base58Prefix(CChainParams::COLDSTAKING_ADDRESS_V2)) {
+        uint160 id2;
+        memcpy(&id2, &vchData[20], 20);
+        uint160 id3;
+        memcpy(&id3, &vchData[40], 20);
+        return std::make_pair(CKeyID(id), std::make_pair(CKeyID(id2), CKeyID(id3)));
+    }
+    if (vchVersion == Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS))
+        return CKeyID(id);
+    else if (vchVersion == Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS))
+        return CScriptID(id);
+    else if (vchVersion == Params().Base58Prefix(CChainParams::RAW_SCRIPT_ADDRESS))
+    {
+        std::vector<unsigned char> vData(vchData.size());
+        memcpy(&vData[0], &vchData[0], vchData.size());
+        return CScript(vData.begin(), vData.end());
+    }
+    else
+        return CNoDestination();
+}
+
+bool CStakeWorkAddress::GetIndexKey(uint160& hashBytes, int& type) const
+{
+    if (!IsValid()) {
+        return false;
+    } else if (vchVersion == Params().Base58Prefix(CChainParams::COLDSTAKING_ADDRESS)) {
+        hashBytes = uint160(Hash160(vchData.begin(), vchData.end()));
+        type = 3;
+        return true;
+    } else if (vchVersion == Params().Base58Prefix(CChainParams::COLDSTAKING_ADDRESS_V2)) {
+        hashBytes = uint160(Hash160(vchData.begin(), vchData.end()));
+        type = 4;
+        return true;
+    } else if (vchVersion == Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS)) {
+        memcpy(&hashBytes, &vchData[0], 20);
+        type = 1;
+        return true;
+    } else if (vchVersion == Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS)) {
+        memcpy(&hashBytes, &vchData[0], 20);
+        type = 2;
+        return true;
+    }
+
+    return false;
+}
+
+bool CStakeWorkAddress::GetKeyID(CKeyID& keyID) const
+{
+    if (!(IsValid() && vchVersion == Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS)))
+        return false;
+    uint160 id;
+    memcpy(&id, &vchData[0], 20);
+    keyID = CKeyID(id);
+    return true;
+}
+
+bool CStakeWorkAddress::GetStakingKeyID(CKeyID& keyID) const
+{
+    if (!(IsValid() && (vchVersion == Params().Base58Prefix(CChainParams::COLDSTAKING_ADDRESS)
+                     || vchVersion == Params().Base58Prefix(CChainParams::COLDSTAKING_ADDRESS_V2))))
+        return false;
+    uint160 id;
+    memcpy(&id, &vchData[0], 20);
+    keyID = CKeyID(id);
+    return true;
+}
+
+bool CStakeWorkAddress::GetSpendingKeyID(CKeyID& keyID) const
+{
+    if (!(IsValid() && (vchVersion == Params().Base58Prefix(CChainParams::COLDSTAKING_ADDRESS)
+                     || vchVersion == Params().Base58Prefix(CChainParams::COLDSTAKING_ADDRESS_V2))))
+        return false;
+    uint160 id;
+    memcpy(&id, &vchData[20], 20);
+    keyID = CKeyID(id);
+    return true;
+}
+
+bool CStakeWorkAddress::GetVotingKeyID(CKeyID& keyID) const
+{
+    if (!(IsValid() && vchVersion == Params().Base58Prefix(CChainParams::COLDSTAKING_ADDRESS_V2)))
+        return false;
+    uint160 id;
+    memcpy(&id, &vchData[40], 20);
+    keyID = CKeyID(id);
+    return true;
+}
+
+bool CStakeWorkAddress::IsScript() const
+{
+    return IsValid() && vchVersion == Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS);
+}
+
+bool CStakeWorkAddress::IsRawScript() const
+{
+    return IsValid() && vchVersion == Params().Base58Prefix(CChainParams::RAW_SCRIPT_ADDRESS);
+}
+
+void CStakeWorkSecret::SetKey(const CKey& vchSecret)
+{
+    assert(vchSecret.IsValid());
+    SetData(Params().Base58Prefix(CChainParams::SECRET_KEY), vchSecret.begin(), vchSecret.size());
+    if (vchSecret.IsCompressed())
+        vchData.push_back(1);
+}
+
+CKey CStakeWorkSecret::GetKey()
+{
+    CKey ret;
+    assert(vchData.size() >= 32);
+    ret.Set(vchData.begin(), vchData.begin() + 32, vchData.size() > 32 && vchData[32] == 1);
+    return ret;
+}
+
+bool CStakeWorkSecret::IsValid() const
+{
+    bool fExpectedFormat = vchData.size() == 32 || (vchData.size() == 33 && vchData[32] == 1);
+    bool fCorrectVersion = vchVersion == Params().Base58Prefix(CChainParams::SECRET_KEY);
+    return fExpectedFormat && fCorrectVersion;
+}
+
+bool CStakeWorkSecret::SetString(const char* pszSecret)
+{
+    return CBase58Data::SetString(pszSecret) && IsValid();
+}
+
+bool CStakeWorkSecret::SetString(const std::string& strSecret)
+{
+    return SetString(strSecret.c_str());
+}

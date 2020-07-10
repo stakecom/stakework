@@ -1,0 +1,53 @@
+bin_PROGRAMS += qt/test/test_stakework-qt
+TESTS += qt/test/test_stakework-qt
+
+TEST_QT_MOC_CPP = qt/test/moc_uritests.cpp
+
+if ENABLE_WALLET
+TEST_QT_MOC_CPP += qt/test/moc_paymentservertests.cpp
+endif
+
+TEST_QT_H = \
+  qt/test/uritests.h \
+  qt/test/paymentrequestdata.h \
+  qt/test/paymentservertests.h
+
+qt_test_test_stakework_qt_CPPFLAGS = $(AM_CPPFLAGS) $(STAKEWORK_INCLUDES) $(STAKEWORK_QT_INCLUDES) \
+  $(QT_INCLUDES) $(QT_TEST_INCLUDES) $(PROTOBUF_CFLAGS)
+
+qt_test_test_stakework_qt_SOURCES = \
+  qt/test/test_main.cpp \
+  qt/test/uritests.cpp \
+  $(TEST_QT_H)
+if ENABLE_WALLET
+qt_test_test_stakework_qt_SOURCES += \
+  qt/test/paymentservertests.cpp
+endif
+
+nodist_qt_test_test_stakework_qt_SOURCES = $(TEST_QT_MOC_CPP)
+
+qt_test_test_stakework_qt_LDADD = $(LIBSTAKEWORKQT) $(LIBSTAKEWORK_SERVER)
+if ENABLE_WALLET
+qt_test_test_stakework_qt_LDADD += $(LIBSTAKEWORK_WALLET)
+endif
+if ENABLE_ZMQ
+qt_test_test_stakework_qt_LDADD += $(LIBSTAKEWORK_ZMQ) $(ZMQ_LIBS)
+endif
+qt_test_test_stakework_qt_LDADD += $(LIBSTAKEWORK_CLI) $(LIBSTAKEWORK_COMMON) $(LIBSTAKEWORK_UTIL) $(LIBSTAKEWORK_CONSENSUS) $(LIBSTAKEWORK_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) \
+  $(LIBMEMENV) $(BOOST_LIBS) $(QT_DBUS_LIBS) $(QT_TEST_LIBS) $(QT_LIBS) \
+  $(QR_LIBS) $(PROTOBUF_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(UNBOUND_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(LIBSECP256K1) \
+  $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(CURL_LIBS)
+qt_test_test_stakework_qt_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(QT_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+qt_test_test_stakework_qt_CXXFLAGS = $(AM_CXXFLAGS) $(QT_PIE_FLAGS)
+
+CLEAN_STAKEWORK_QT_TEST = $(TEST_QT_MOC_CPP) qt/test/*.gcda qt/test/*.gcno
+
+CLEANFILES += $(CLEAN_STAKEWORK_QT_TEST)
+
+test_stakework_qt : qt/test/test_stakework-qt$(EXEEXT)
+
+test_stakework_qt_check : qt/test/test_stakework-qt$(EXEEXT) FORCE
+	$(MAKE) check-TESTS TESTS=$^
+
+test_stakework_qt_clean: FORCE
+	rm -f $(CLEAN_STAKEWORK_QT_TEST) $(qt_test_test_stakework_qt_OBJECTS)
