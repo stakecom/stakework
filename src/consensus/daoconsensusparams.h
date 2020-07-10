@@ -85,7 +85,6 @@ static std::string sConsensusParamsDesc[Consensus::MAX_CONSENSUS_PARAMS] = {
     "Yearly fee for registering a name in NavNS",
     "Minimum fee as a fund contribution to submit a DAO vote using a light wallet"
 };
-/*
 static ConsensusParamType vConsensusParamsType[MAX_CONSENSUS_PARAMS] =
 {
     TYPE_NUMBER,
@@ -120,7 +119,6 @@ static ConsensusParamType vConsensusParamsType[MAX_CONSENSUS_PARAMS] =
     TYPE_XSW,
     TYPE_XSW
 };
-*/
 }
 
 #endif // DAOCONSENSUSPARAMS_H
