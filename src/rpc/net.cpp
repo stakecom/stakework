@@ -585,7 +585,7 @@ UniValue getstakinginfo(const UniValue& params, bool fHelp)
 
     CStateViewCache view(pcoinsTip);
 
-    uint64_t nNetworkWeight = GetPoSKernelPS();
+    uint64_t nNetworkWeight = GetPoSKernelPS()*COIN;
     bool staking = nLastCoinStakeSearchInterval && nWeight;
     uint64_t nExpectedTime = staking ? (GetTargetSpacing(pindexBestHeader->nHeight) * nNetworkWeight / nWeight) : 0;
     CAmount nExpectedDailyReward = staking ? ((double) 86400 / (nExpectedTime + 1)) * GetStakingRewardPerBlock(view) : 0.0;

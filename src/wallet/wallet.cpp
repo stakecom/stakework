@@ -48,7 +48,7 @@ bool fSendFreeTransactions = DEFAULT_SEND_FREE_TRANSACTIONS;
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 const uint32_t BIP32_HARDENED_KEY_LIMIT = 0x80000000;
 
-int64_t StakeCombineThreshold = 1000 * COIN;
+int64_t StakeCombineThreshold = 100 * COIN;
 int64_t StakeSplitThreshold = 2 * StakeCombineThreshold;
 
 /**
