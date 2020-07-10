@@ -140,7 +140,7 @@ void CommunityFundPage::refresh(bool all, int proposal)
             }
 
             string spent;
-            spent = wallet->formatDisplayAmount(spent_nav);
+            spent = wallet->formatDisplayAmount(spent_xsw);
             ui->labelSpentAmount->setText(QString::fromStdString(spent));
         }
     }
