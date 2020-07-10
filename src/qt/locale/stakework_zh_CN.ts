@@ -1,5 +1,28 @@
 <TS language="zh_CN" version="2.1">
 <context>
+    <name>stakeworkgui</name>
+    <message>
+        <source>HOME</source>
+        <translation>概况</translation>
+    </message>
+    <message>
+        <source>SEND</source>
+        <translation>发送</translation>
+    </message>
+    <message>
+        <source>RECEIVE</source>
+        <translation>接收</translation>
+    </message>
+    <message>
+        <source>HISTORY</source>
+        <translation>历史</translation>
+    </message>
+    <message>
+        <source>DAO</source>
+        <translation>治理</translation>
+    </message>
+    </context>
+<context>
     <name>AddressBookPage</name>
     <message>
         <source>Right-click to edit address or label</source>

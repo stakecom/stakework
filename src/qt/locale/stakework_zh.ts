@@ -1,5 +1,28 @@
 <TS language="zh" version="2.1">
 <context>
+    <name>stakeworkgui</name>
+    <message>
+        <source>HOME</source>
+        <translation>概况</translation>
+    </message>
+    <message>
+        <source>SEND</source>
+        <translation>发送</translation>
+    </message>
+    <message>
+        <source>RECEIVE</source>
+        <translation>接收</translation>
+    </message>
+    <message>
+        <source>HISTORY</source>
+        <translation>历史</translation>
+    </message>
+    <message>
+        <source>DAO</source>
+        <translation>治理</translation>
+    </message>
+    </context>
+<context>
     <name>AddressBookPage</name>
     </context>
 <context>
@@ -65,6 +88,87 @@
     </context>
 <context>
     <name>OverviewPage</name>
+    <message>
+        <location filename="../forms/overviewpage.ui" line="+14"/>
+        <source>Form</source>
+        <translation>Form</translation>
+    </message>
+    <message>
+        <location line="+109"/>
+        <source>Immature</source>
+        <translation>未成熟</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Total</source>
+        <translation>总计</translation>
+    </message>
+    <message>
+        <location line="-17"/>
+        <source>Watched</source>
+        <translation>仅观察</translation>
+    </message>
+    <message>
+        <location line="-51"/>
+        <location line="+88"/>
+        <source>Staking</source>
+        <translation>挖矿中</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>7D</source>
+        <translation>7日</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>30D</source>
+        <translation>30日</translation>
+    </message>
+        <message>
+        <location line="+17"/>
+        <source>Balances</source>
+        <translation>资产</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Available</source>
+        <translation>可用的</translation>
+    </message>
+    <message>
+        <location line="-183"/>
+        <source>Recent Transactions</source>
+        <translation>最近的交易</translation>
+    </message>
+    <message>
+        <location line="-192"/>
+        <source>Pending</source>
+        <translation>未决的</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Cold Staking</source>
+        <translation>冷挖矿</translation>
+    </message>
+    <message>
+        <location line="+117"/>
+        <source>1Y</source>
+        <translation>1年</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>ALL</source>
+        <translation>全部</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>24H</source>
+        <translation>24小时</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Set up Staking Rewards</source>
+        <translation>设置挖矿奖励</translation>
+    </message>
     </context>
 <context>
     <name>PaymentServer</name>
