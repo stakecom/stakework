@@ -5367,7 +5367,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 {
 
     // Check timestamp
-    if (block.GetBlockTime() > nAdjustedTime + (IsNtpSyncEnabled(pindexPrev,Params().GetConsensus()) ? Params().GetConsensus().nMaxFutureDrift : 2 * 60 * 60))
+    if(block.GetBlockTime() > nAdjustedTime + (IsNtpSyncEnabled(pindexPrev,Params().GetConsensus()) ? Params().GetConsensus().nMaxFutureDrift : 2 * 60 * 60))
         return state.Invalid(false, REJECT_INVALID, "time-too-new", "block timestamp too far in the future");
 
     // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
@@ -9735,21 +9735,7 @@ int64_t GetProofOfStakeReward(int nHeight, int64_t nCoinAge, int64_t nFees, CBlo
   if(IsStaticRewardEnabled(pindexPrev, Params().GetConsensus())){
       nSubsidy = GetStakingRewardPerBlock(view);
   } else {
-      int64_t nRewardCoinYear;
-      nRewardCoinYear = MAX_MINT_PROOF_OF_STAKE;
-
-      if(nHeight-1 < 7 * Params().GetConsensus().nDailyBlockCount)
-          nRewardCoinYear = 1 * MAX_MINT_PROOF_OF_STAKE;
-      else if(nHeight-1 < (365 * Params().GetConsensus().nDailyBlockCount))
-          nRewardCoinYear = 0.5 * MAX_MINT_PROOF_OF_STAKE;
-      else if(nHeight-1 < (730 * Params().GetConsensus().nDailyBlockCount))
-          nRewardCoinYear = 0.5 * MAX_MINT_PROOF_OF_STAKE;
-      else if(IsCommunityFundAccumulationEnabled(pindexPrev, Params().GetConsensus(), false))
-          nRewardCoinYear = 0.4 * MAX_MINT_PROOF_OF_STAKE;
-      else
-          nRewardCoinYear = 0.5 * MAX_MINT_PROOF_OF_STAKE;
-
-       nSubsidy = nCoinAge * nRewardCoinYear / 365;
+       nSubsidy = 0;
   }
 
   return  nSubsidy + nFees;

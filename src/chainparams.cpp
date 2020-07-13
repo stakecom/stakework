@@ -57,8 +57,8 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
  */
 static CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
-    const char* pszTimestamp = "Game is afoot!";
-    const CScript genesisOutputScript = CScript() << ParseHex("04bf5608f13e9b2781b839ea78adbd1cb90d8fc17dcc67028e93e65223ea77f8bc8d8eed1191f37dd0ad20f371912d86e1c2e7369251cb06d2a3fdc5e26262d6df") << OP_CHECKSIG;
+    const char* pszTimestamp = "Stakework means a whole new stake(POS) chain!";
+    const CScript genesisOutputScript = CScript() << ParseHex("048aaaaf13e9b2781b839ea78adbd1cb90d8fc17dcc67028e93e65223ea77f8bc8d8eed1191f37dd0ad20f371912d86e1c2e7369251cb06d2a3fdc5e26262d6df") << OP_CHECKSIG;
     return CreateGenesisBlock(pszTimestamp, genesisOutputScript, nTime, nNonce, nBits, nVersion, genesisReward);
 }
 
@@ -99,7 +99,7 @@ public:
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 15120; // 75% of 20160
         consensus.nMinerConfirmationWindow = 20160;
-        consensus.nStakeMinAge = 60 * 60 ;	// minimum for coin age: 2 hours
+        consensus.nStakeMinAge = 60 ;
         consensus.nTargetSpacing = 30; // Blocktime: 30 secs
         consensus.nStakeCombineThreshold = 100 * COIN;
         consensus.nStakeSplitThreshold = 2 * consensus.nStakeCombineThreshold;
@@ -117,7 +117,7 @@ public:
         consensus.nProposalMaxVersion = CProposal::ALL_VERSION;
         consensus.nConsultationMaxVersion = CConsultation::ALL_VERSION;
         consensus.nConsultationAnswerMaxVersion = CConsultationAnswer::ALL_VERSION;
-        consensus.nMaxFutureDrift = 60;
+        consensus.nMaxFutureDrift = 15;
         consensus.nHeightv451Fork = 2722100;
         consensus.nHeightv452Fork = 2882875;
         consensus.fDaoClientActivated = true;
@@ -208,7 +208,7 @@ public:
         // Deployment of Static Reward
         consensus.vDeployments[Consensus::DEPLOYMENT_STATIC_REWARD].bit = 15;
         consensus.vDeployments[Consensus::DEPLOYMENT_STATIC_REWARD].nStartTime = 1533081600; // August 1st, 2018
-        consensus.vDeployments[Consensus::DEPLOYMENT_STATIC_REWARD].nTimeout = 1564617600; // August 1st, 2019
+        consensus.vDeployments[Consensus::DEPLOYMENT_STATIC_REWARD].nTimeout = 9999999999; // August 1st, 2019
 
         // Deployment of Quorum reduction for the Community Fund
         consensus.vDeployments[Consensus::DEPLOYMENT_QUORUM_CFUND].bit = 17;
@@ -253,13 +253,12 @@ public:
         nDefaultPort = 44440;
         nPruneAfterHeight = 100000;
         bnProofOfWorkLimit = arith_uint256(~arith_uint256() >> 16);
+        genesis = CreateGenesisBlock(1594607736, 389340, 0x1f00ffff, 1, 0);
+	consensus.hashGenesisBlock = genesis.GetHash();
+//}
 
-        genesis = CreateGenesisBlock(1460561040, 6945, 0x1f00ffff, 1, 0);
-
-	      consensus.hashGenesisBlock = genesis.GetHash();
-
-        assert(consensus.hashGenesisBlock == uint256S("0x00006a4e3e18c71c6d48ad6c261e2254fa764cf29607a4357c99b712dfbb8e6a"));
-        assert(genesis.hashMerkleRoot == uint256S("0xc507eec6ccabfd5432d764afceafba42d2d946594b8a60570cb2358a7392c61a"));
+        assert(consensus.hashGenesisBlock == uint256S("0x000049946ecfb4dacd65fb756041afc326036db9a9d6c9c8aec112ed967bdd25"));
+        assert(genesis.hashMerkleRoot == uint256S("0xc5f21e830f70651688bfe1b00416332e8f8e7745b1db214c56b3142199df39d9"));
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,75);
         base58Prefixes[COLDSTAKING_ADDRESS] = std::vector<unsigned char>(1,21); // cold staking addresses start with 'X'
@@ -283,7 +282,7 @@ public:
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
-            ( 0, uint256S("0x00006a4e3e18c71c6d48ad6c261e2254fa764cf29607a4357c99b712dfbb8e6a")),
+            ( 0, uint256S("0x000049946ecfb4dacd65fb756041afc326036db9a9d6c9c8aec112ed967bdd25")),
               0, // * UNIX timestamp of last checkpoint block
               0,    // * total number of transactions between genesis and last checkpoint
                         //   (the tx=... number in the SetBestChain debug.log lines)
