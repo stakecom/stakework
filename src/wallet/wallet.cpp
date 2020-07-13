@@ -363,6 +363,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
             boost::this_thread::interruption_point();
             COutPoint prevoutStake = COutPoint(pcoin.first->GetHash(), pcoin.second);
             int64_t nBlockTime;
+LogPrintf("CreateCoinStake: \n");
             if (CheckKernel(pindexPrev, nBits, txNew.nTime , prevoutStake, view, &nBlockTime))
             {
                 // Found a kernel
