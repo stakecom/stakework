@@ -9735,7 +9735,7 @@ int64_t GetProofOfStakeReward(int nHeight, int64_t nCoinAge, int64_t nFees, CBlo
   if(IsStaticRewardEnabled(pindexPrev, Params().GetConsensus())){
       nSubsidy = GetStakingRewardPerBlock(view);
   } else {
-       nSubsidy = 0;
+       nSubsidy = 1*COIN;
   }
 
   return  nSubsidy + nFees;

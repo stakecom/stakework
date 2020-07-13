@@ -358,16 +358,15 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     CScript scriptPubKeyKernel;
     for(PAIRTYPE(const CWalletTx*, unsigned int) pcoin: setCoins)
     {
-        static int nMaxStakeSearchInterval = 60;
         bool fKernelFound = false;
-        for (unsigned int n=0; n<min(nSearchInterval,(int64_t)nMaxStakeSearchInterval) && !fKernelFound && pindexPrev == chainActive.Tip(); n++)
+	if(!fKernelFound && pindexPrev == chainActive.Tip())
         {
             boost::this_thread::interruption_point();
             // Search backward in time from the given txNew timestamp
             // Search nSearchInterval seconds back up to nMaxStakeSearchInterval
             COutPoint prevoutStake = COutPoint(pcoin.first->GetHash(), pcoin.second);
             int64_t nBlockTime;
-            if (CheckKernel(pindexPrev, nBits, txNew.nTime - n, prevoutStake, view, &nBlockTime))
+            if (CheckKernel(pindexPrev, nBits, txNew.nTime, prevoutStake, view, &nBlockTime))
             {
                 // Found a kernel
                 LogPrint("coinstake", "CreateCoinStake : kernel found\n");
@@ -378,13 +377,13 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
                 if (!Solver(scriptPubKeyKernel, whichType, vSolutions))
                 {
                     LogPrint("coinstake", "CreateCoinStake : failed to parse kernel\n");
-                    break;
+                    continue;
                 }
                 LogPrint("coinstake", "CreateCoinStake : parsed kernel type=%d\n", whichType);
                 if (whichType != TX_PUBKEY && whichType != TX_PUBKEYHASH && whichType != TX_COLDSTAKING && whichType != TX_COLDSTAKING_V2)
                 {
                     LogPrint("coinstake", "CreateCoinStake : no support for kernel type=%d\n", whichType);
-                    break;  // only support pay to public key and pay to address
+                    continue;  // only support pay to public key and pay to address
                 }
                 if (whichType == TX_COLDSTAKING || whichType == TX_COLDSTAKING_V2) // cold staking
                 {
@@ -392,7 +391,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
                     if (!keystore.GetKey(uint160(vSolutions[0]), key))
                     {
                         LogPrint("coinstake", "CreateCoinStake : failed to get key for kernel type=%d\n", whichType);
-                        break;  // unable to find corresponding public key
+                        continue;  // unable to find corresponding public key
                     } else {
                         // we keep the same script
                         scriptPubKeyOut = scriptPubKeyKernel;
@@ -404,7 +403,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
                     if (!keystore.GetKey(uint160(vSolutions[0]), key))
                     {
                         LogPrint("coinstake", "CreateCoinStake : failed to get key for kernel type=%d\n", whichType);
-                        break;  // unable to find corresponding public key
+                        continue;  // unable to find corresponding public key
                     }
                     scriptPubKeyOut << ToByteVector(key.GetPubKey()) << OP_CHECKSIG;
                 }
@@ -414,41 +413,35 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
                     if (!keystore.GetKey(Hash160(vchPubKey), key))
                     {
                         LogPrint("coinstake", "CreateCoinStake : failed to get key for kernel type=%d\n", whichType);
-                        break;  // unable to find corresponding public key
+                        continue;  // unable to find corresponding public key
                     }
 
                     if (key.GetPubKey() != vchPubKey)
                     {
                         LogPrint("coinstake", "CreateCoinStake : invalid key for kernel type=%d\n", whichType);
-                        break; // keys mismatch
+                        continue; // keys mismatch
                     }
 
                     scriptPubKeyOut = scriptPubKeyKernel;
                 }
 
-                txNew.nTime -= n;
                 txNew.vin.push_back(CTxIn(pcoin.first->GetHash(), pcoin.second));
                 nCredit += pcoin.first->vout[pcoin.second].nValue;
                 vwtxPrev.insert(make_pair(pcoin.first,pcoin.second));
                 txNew.vout.push_back(CTxOut(0, scriptPubKeyOut));
                 kernelScriptPubKey = scriptPubKeyKernel;
-
                 LogPrint("coinstake", "CreateCoinStake : added kernel type=%d\n", whichType);
                 fKernelFound = true;
-                break;
             }
         }
-
         if (fKernelFound)
             break; // if kernel is found stop searching
     }
-
     if (nCredit == 0 || nCredit > nBalance - nReserveBalance)
         return false;
 
     CTransaction txPrev;
     uint256 hashBlock = uint256();
-
     for(PAIRTYPE(const CWalletTx*, unsigned int) pcoin: setCoins)
     {
         // Attempt to add more inputs
@@ -494,7 +487,6 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
 
         nCredit += nReward;
     }
-
     int64_t blockValue = nCredit;
     std::map<CStakeWorkAddress, double> splitMap;
     double nAccumulatedFee = 0.0;
@@ -586,7 +578,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
             txNew.vout.push_back(CTxOut(thisOut, GetScriptForDestination(entry.first.Get())));
         }
     }
-
+LogPrintf("MMM 12\n");
     bool fSplit = false;
 
     if (blockValue >= Params().GetConsensus().nStakeSplitThreshold)
