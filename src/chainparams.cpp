@@ -99,7 +99,7 @@ public:
         consensus.fPowNoRetargeting = false;
         consensus.nRuleChangeActivationThreshold = 15120; // 75% of 20160
         consensus.nMinerConfirmationWindow = 20160;
-        consensus.nStakeMinAge = 60 ;
+        consensus.nStakeMinAge = 60 * 60;
         consensus.nTargetSpacing = 30; // Blocktime: 30 secs
         consensus.nStakeCombineThreshold = 100 * COIN;
         consensus.nStakeSplitThreshold = 2 * consensus.nStakeCombineThreshold;
