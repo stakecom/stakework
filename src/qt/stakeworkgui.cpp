@@ -94,7 +94,7 @@ static const struct {
     bool error;
     const char *text;
 } notifs[] = {
-    { true, "The DAO needs you! Please don't forget to vote!" },
+    //{ true, "The DAO needs you! Please don't forget to vote!" },
     { false, "This wallet is currently syncing. Your balance may not be accurate until it has completed!" },
     { false, "GENERIC WARNINGS USE THIS" }
 };
@@ -814,25 +814,25 @@ void StakeWorkGUI::createToolBars()
     walletFrame->menuLayout->addWidget(logoBtn);
 
     // Buttons icon
-    QString btnNamesIcon[5] = {
+    QString btnNamesIcon[4/*5*/] = {
         "home",
         "send",
         "receive",
-        "transactions",
-        "dao"
+        "transactions"//,
+//        "dao"
     };
 
     // Buttons text
-    std::string btnNamesText[5] = {
+    std::string btnNamesText[4/*5*/] = {
         QCoreApplication::translate("stakeworkgui","HOME").toStdString(),
         QCoreApplication::translate("stakeworkgui","SEND").toStdString(),
         QCoreApplication::translate("stakeworkgui","RECEIVE").toStdString(),
-        QCoreApplication::translate("stakeworkgui","HISTORY").toStdString(),
-        QCoreApplication::translate("stakeworkgui","DAO").toStdString()
+        QCoreApplication::translate("stakeworkgui","HISTORY").toStdString()//,
+//        QCoreApplication::translate("stakeworkgui","DAO").toStdString()
     };
 
     // Build each new button
-    for (unsigned i = 0; i < 5; ++i)
+    for (unsigned i = 0; i < 4/*5*/; ++i)
     {
         // Create the icon
         QIcon icon = platformStyle->Icon(":/icons/" + btnNamesIcon[i], COLOR_WHITE);
@@ -886,7 +886,7 @@ void StakeWorkGUI::createToolBars()
     connect(menuBtns[1], SIGNAL(clicked()), this, SLOT(gotoSendCoinsPage()));
     connect(menuBtns[2], SIGNAL(clicked()), this, SLOT(gotoRequestPaymentPage()));
     connect(menuBtns[3], SIGNAL(clicked()), this, SLOT(gotoHistoryPage()));
-    connect(menuBtns[4], SIGNAL(clicked()), this, SLOT(gotoCommunityFundPage()));
+//    connect(menuBtns[4], SIGNAL(clicked()), this, SLOT(gotoCommunityFundPage()));
 
     // Open about when versionLabel is clicked
     connect(versionLabel, SIGNAL(clicked()), this, SLOT(aboutClicked()));
@@ -904,7 +904,7 @@ void StakeWorkGUI::showHideNotification(bool show, int index)
 
 void StakeWorkGUI::setActiveMenu(int index)
 {
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 4/*5*/; ++i)
     {
         menuBtns[i]->setDisabled(i == index);
     }
